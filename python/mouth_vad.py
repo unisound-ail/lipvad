@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-import matplotlib as mpl 
-mpl.use('AGG')
-import matplotlib.pyplot as plt
+#import matplotlib as mpl 
+#mpl.use('AGG')
+#import matplotlib.pyplot as plt
 import utils
-from utils.video import FileVideoStream, FPS
+from utils.video import FileVideoStream, FPS, VideoStream
 from utils import face_utils
 import numpy as np
 import datetime
@@ -12,9 +12,9 @@ import argparse
 import time
 import dlib
 import cv2
-import skvideo.io
+#import skvideo.io
 from scipy.spatial import distance as dist
-import imageio
+#import imageio
 
 
 MOUTH_MOVE_IDXS=(61, 68) # start from 1
@@ -37,9 +37,11 @@ def detection(image, args):
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(args['shape_predictor'])
 
-    image = utils.resize(image, width=500)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    #image = utils.resize(image, width=500)
+    #gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = image
 
+    ratio = 0.0
     # detect faces and face pose
     rects, scores, indexs = detector.run(gray, 1)    
     for i, rect in enumerate(rects):
@@ -48,13 +50,13 @@ def detection(image, args):
 
         (mi, mj) = MOUTH_MOVE_IDXS
         mouth = shape[mi-1:mj+1]
-        for (x, y) in shape:
-            cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
+        #for (x, y) in shape:
+        #    cv2.circle(image, (x, y), 1, (0, 0, 255), -1)
 
         # mouth aspect ratio for vad
         ratio = mouth_aspect_ratio(mouth)
         print('ratio', ratio)
-        cv2.putText(image, 'ratio: {}'.format(ratio), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
+        #cv2.putText(image, 'ratio: {}'.format(ratio), (20,30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
         
         # face pose
         cv2.putText(image, 'face pose: {}'.format(face_utils.FACIAL_POSE_IDXS[int(indexs[i])]), (20, 90),
@@ -95,27 +97,31 @@ def main(args):
                 cv2.putText(frame, 'end', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
                 state = False
                 end.append(fps.nframe())
-        else:
+        elif ratio >= 0.15:
             if not state:
                 state = True
                 print('start at frame {}'.format(fps.nframe()))
                 cv2.putText(frame, 'start', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
                 start.append(fps.nframe())
+
+        cv2.imshow('capture', frame)
+        if cv2.waitKey(20) & 0xFF == ord('q'):
+            break
         
     print('start', start)
     print('end', end)
 
-    print('ratios', ratios)
-    plt.plot(ratios)
-    plt.savefig('mouth_ratios.png')
+    #print('ratios', ratios)
+    #plt.plot(ratios)
+    #plt.savefig('mouth_ratios.png')
 
-    frames = np.stack(frames)
-    print(frames.shape)
+    #frames = np.stack(frames)
+    #print(frames.shape)
     #skvideo.io.vwrite('output', frames)
-    for i, frame in enumerate(frames):
-        cv2.imwrite('%d.png' % i, frame) 
+    #for i, frame in enumerate(frames):
+    #    cv2.imwrite('%d.png' % i, frame) 
 
-    imageio.mimsave('output.gif', frames)
+    #imageio.mimsave('output.gif', frames)
 
     fps.stop()
     print('FPS {}'.format(fps.fps()))
