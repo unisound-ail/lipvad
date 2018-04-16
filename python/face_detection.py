@@ -20,7 +20,6 @@ def main(args):
     while True:
         ret, frame = lipvad.read()
         if frame is None:
-            break
 
         frame, ratio = lipvad.detection(frame, args)
         fps.update()

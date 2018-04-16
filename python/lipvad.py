@@ -14,43 +14,44 @@ from scipy.spatial import distance as dist
 
 class LipVad(object):
 
-    MOUTH_MOVE_IDXS=(49, 61) # start from 1
+    MOUTH_MOVE_IDXS=(61, 68) # start from 1
     MOUTH_AR_THRESH_LOW = 0.1
     MOUTH_AR_THRESH_HIGH = 0.15
     MOUTH_AR_CONSEC_FRAMES = 4
 
-    def __init__(self, args):
+    def __init__(self, args, log=False):
+        self._log = log
         self.args = args
         self.detector = dlib.get_frontal_face_detector()
         self.predictor = dlib.shape_predictor(self.args['shape_predictor'])
-        self.vs = VideoStream(src=args['device'], usePiCamera=args['picamera'] > 0)
-        #self.vs = VideoStream(src=args['video_filepath'], usePiCamera=args['picamera'] > 0)
-        self.fps = FPS()
+        #self._vs = VideoStream(src=args['device'], usePiCamera=args['picamera'] > 0)
+        self._vs = VideoStream(src=args['video_filepath'], usePiCamera=args['picamera'] > 0)
+        self._fps = FPS()
 
         self.indexs = None # face pose
 
         self._ratio = 0.0
         self.state = False
-        self.cnt = 0
+        self._cnt = 0
         self._start = []
         self._end = []
 
     def start(self):
-        self.vs.start()
-        self.fps.start()
+        self._vs.start()
+        self._fps.start()
 
     def stop(self):
-        self.vs.stop()
-        self.fps.stop()
+        self._vs.stop()
+        self._fps.stop()
 
     def read(self):
-        frame = self.vs.read()
-        self.fps.update()
+        frame = self._vs.read()
+        self._fps.update()
         return frame
 
     def process(self, image):
         self._image = image
-        #image = utils.resize(image, width=500)
+        image = utils.resize(image, width=200)
         gray= cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         return gray
 
@@ -86,30 +87,33 @@ class LipVad(object):
     def update(self, ratio):
         '''update vad state'''
         if ratio < LipVad.MOUTH_AR_THRESH_LOW:
-            self.cnt += 1
-            if self.state and self.cnt > LipVad.MOUTH_AR_CONSEC_FRAMES:
-                self.cnt = 0
-                print('end at frame {}'.format(self.fps.nframe()))
-                cv2.putText(self._image, 'end', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
+            self._cnt += 1
+            if self.state and self._cnt > LipVad.MOUTH_AR_CONSEC_FRAMES:
+                self._cnt = 0
                 self.state = False
-                self._end.append(self.fps.nframe())
+                self._end.append(self._fps.nframe())
+                if self._log:
+                   print('end at frame {}'.format(self._fps.nframe()))
+                   cv2.putText(self._image, 'end', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
         elif ratio >= LipVad.MOUTH_AR_THRESH_HIGH:
             if not self.state:
                 self.state = True
-                print('start at frame {}'.format(self.fps.nframe()))
-                cv2.putText(self._image, 'start', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
-                self._start.append(self.fps.nframe())
+                self._start.append(self._fps.nframe())
+                if self._log:
+                    print('start at frame {}'.format(self._fps.nframe()))
+                    cv2.putText(self._image, 'start', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,255), 2)
 
     def ratio(self, image):
         self._ratio = self._mouth_aspect_ratio(image)
         self.update(self._ratio)
+        return self._ratio
 
     def fps(self):
-        return self.fps.fps()
+        return self._fps.fps()
 
     def elapsed(self):
-        return self.fps.elapsed()
+        return self._fps.elapsed()
 
     def segments(self):
-        return self._start, self._end
+        return zip(self._start, self._end)
 

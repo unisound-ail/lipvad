@@ -38,3 +38,6 @@ class WebcamVideoStream:
 
     def stop(self):
         self.stopped = True
+
+    def qsize(self):
+        return self.Q.qsize()

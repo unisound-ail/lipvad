@@ -19,3 +19,6 @@ class VideoStream:
 
     def stop(self):
         self.stream.stop()
+    
+    def qsize(self):
+        self.stream.qsize()
