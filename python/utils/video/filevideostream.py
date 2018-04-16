@@ -8,7 +8,7 @@ else:
     from Queue import Queue
 
 class FileVideoStream:
-    def __init__(self, path, queueSize=128):
+    def __init__(self, path, queueSize=200):
         self.stream = cv2.VideoCapture(path)
         self.stopped = False
         self.Q = Queue(maxsize=queueSize)
@@ -40,3 +40,6 @@ class FileVideoStream:
 
     def stop(self):
         self.stopped = True
+
+    def qsize(self):
+        return self.Q.qsize()
