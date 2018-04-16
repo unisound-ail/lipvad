@@ -102,7 +102,7 @@ class LipVad(object):
 
     def ratio(self, image):
         self._ratio = self._mouth_aspect_ratio(image)
-        self.update(self.ratio)
+        self.update(self._ratio)
 
     def fps(self):
         return self.fps.fps()

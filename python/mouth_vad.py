@@ -35,23 +35,25 @@ def main(args):
     frames = []
     ratios = []
 
+    cnt = 0
     while True:
         frame = lipvad.read()
         if frame is None:
             break
 
+        cnt += 1
         frame, ratio = detection(lipvad, frame, args)
         frames.append(frame)
         ratios.append(ratio)
-        print('state', lipvad.state)
-
         cv2.imshow('capture', frame)
-        if cv2.waitKey(2) & 0xFF == ord('q'):
+        if cv2.waitKey(20) & 0xFF == ord('q'):
+            break
+        if cnt > 10:
             break
         
     lipvad.stop()
     print('segments', lipvad.segments())
-    print('FPS {}'.format(livpad.fps()))
+    print('FPS {}'.format(lipvad.fps()))
     print('time elapsed {}'.format(lipvad.elapsed()))
 
 if __name__ == '__main__':
