@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-#import matplotlib as mpl 
-#mpl.use('AGG')
-#import matplotlib.pyplot as plt
 import utils
 from utils.video import FileVideoStream, FPS, VideoStream
 from utils import face_utils
@@ -12,54 +9,29 @@ import argparse
 import time
 import dlib
 import cv2
-#import skvideo.io
 from scipy.spatial import distance as dist
-#import imageio
-
-
-def detection(image, args):
-    detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor(args['shape_predictor'])
-
-    #image = utils.resize(image, width=500)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    #gray = image
-
-    ratio = 0.0
-    # detect faces and face pose
-    rects, scores, indexs = detector.run(gray, 1)    
-    for i, rect in enumerate(rects):
-        _p1, _p2 = (rect.left(), rect.top()), (rect.right(), rect.bottom())
-        cv2.rectangle(image, _p1, _p2, (255,0,0), 3)
-    return image, ratio
+from lipvad import LipVad
 
 def main(args):
-    #vs = VideoStream(src=args['device'], usePiCamera=args['picamera'] > 0).start()
-    vs = cv2.VideoCapture(0)
+    lipvad = LipVad(args)
     fps = FPS().start()
+    lipvad.start()
 
-    frames = []
-
-    state = False
-    cnt = 0
-    
     while True:
-        ret, frame = vs.read()
+        ret, frame = lipvad.read()
         if frame is None:
             break
 
-        frame, ratio = detection(frame, args)
-
+        frame, ratio = lipvad.detection(frame, args)
         fps.update()
-
         cv2.imshow('capture', frame)
-        if cv2.waitKey(20) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
     fps.stop()
     print('FPS {}'.format(fps.fps()))
     print('time elapsed {}'.format(fps.elapsed()))
-    vs.release()
-    cv2.destroyAllWindows()
+    lipvad.stop()
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
