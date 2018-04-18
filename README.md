@@ -1,0 +1,6 @@
+# lipvad
+
+## Requirments
+
+    OpenCV
+    Dlib
