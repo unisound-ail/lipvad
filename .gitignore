@@ -1,4 +1,4 @@
-shape_predictor_68_face_landmarks.dat
 *.jpg
 *.pyc
-*.dat
+*.avi
+venv
