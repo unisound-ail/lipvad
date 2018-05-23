@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Visual VAD Demo
 """
 
+import argparse
 from collections import deque
 
 import cv2
@@ -25,19 +26,19 @@ def get_land_mark(shape_predictor, img, rect):
     return [(_s.part(i).x, _s.part(i).y) for i in range(0, _s.num_parts)]
 
 
-def main():
+def main(args):
     """Main
     """
 
     face_detector = dlib.get_frontal_face_detector()
-    shape_predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+    shape_predictor = dlib.shape_predictor("./data/shape_predictor_68_face_landmarks.dat")
 
     _cap = cv2.VideoCapture(0)
 
     # Define the codec and create VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    _out = cv2.VideoWriter('output.avi', fourcc, 16.0, (640, 480))
-    write_video = False
+    if args.write_video:
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        _out = cv2.VideoWriter('output.avi', fourcc, 16.0, (640, 480))
 
     _total_diff, _last_ratio = 0.0, 0.0
     _diff_queue = deque(maxlen=3)
@@ -85,7 +86,7 @@ def main():
             cv2.putText(frame, "Speaking", (450, 90),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 3)
 
-        if write_video:
+        if args.write_video:
             _out.write(frame)
             if _cnt_silence > 60:
                 break
@@ -97,4 +98,8 @@ def main():
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--write-video', type=bool, help='Write video or not.', default=False)
+    args = parser.parse_args()
+
+    main(args)
