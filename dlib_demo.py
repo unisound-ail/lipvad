@@ -26,6 +26,19 @@ def get_land_mark(shape_predictor, img, rect):
     return [(_s.part(i).x, _s.part(i).y) for i in range(0, _s.num_parts)]
 
 
+def resize_rects(rects, ratio):
+    """Resize rects by ratio
+    """
+    new_rects = []
+    for r in rects:
+        left, top, right, bottom = r.left(), r.top(), r.right(), r.bottom()
+        _fn = lambda x:int(x*ratio)
+        left, top, right, bottom = map(_fn, [left , top, right, bottom])
+        rect = dlib.rectangle(left, top, right, bottom)
+        new_rects.append(rect)
+    return new_rects
+
+
 def main(args):
     """Main
     """
@@ -46,12 +59,20 @@ def main(args):
     while True:
         _, frame = _cap.read()
 
+        if args.resize != 1.:
+            frame_for_det = cv2.resize(frame, (int(640 * args.resize), int(480 * args.resize)))
+        else:
+            frame_for_det = frame
+
         cv_show("Origin", frame)
 
-        rects, _, idx = face_detector.run(frame, 0)
+        rects, _, idx = face_detector.run(frame_for_det, 0)
         for i in idx:
             cv2.putText(frame, get_pose(i), (10 * i + 20, 90),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 3)
+
+        if args.resize != 1.:
+            rects = resize_rects(rects, 1. / args.resize)
 
         _mouth_points = None
         _m_ratio = 0.0
@@ -100,6 +121,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--write-video', type=bool, help='Write video or not.', default=False)
+    parser.add_argument('--resize', type=float, help='resize image', default=1.)
     args = parser.parse_args()
 
     main(args)
